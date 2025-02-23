@@ -52,6 +52,8 @@ SEMS-ESP/
 
 ## 하드웨어 요구사항
 1. ESP32-S3 보드 혹은 코드가 호환되는 보드
+    > ESP32-S3-DevKitC-1-N32R8V보드를 기준으로 작성되었습니다.  
+    sdkconfig.defaults와 partitions를 사용 보드에 맞게 수정해주세요.
 2. DS18B20 온도 센서
 3. SD 카드 모듈(SPI 방식)
 4. 기타 연결용 점퍼 와이어
