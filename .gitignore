@@ -1,0 +1,7 @@
+.DS_Store/
+.vscode/
+.devcontainer/
+build/
+.metadata/
+managed_components/
+.clang-format
