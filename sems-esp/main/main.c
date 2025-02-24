@@ -6,8 +6,9 @@
 #include "sems_def.h"
 #include "web.h"
 
-static const char *TAG  = "main";
-static const char *NAME = "%s/" DB_NAME;
+static const char *TAG      = "main";
+static const char *NAME     = "%s/" DB_NAME;
+static const uint32_t TIMER = SAVE_TIME_INTERVAL;
 
 void sqlite(void *pvParameter)
 {
@@ -65,7 +66,8 @@ void sqlite(void *pvParameter)
         vTaskDelay(pdMS_TO_TICKS(100));
 
         sqlite3_stmt *stmt;
-        const char *sql = "INSERT INTO temperature (timestamp, temperature) VALUES (?, ?);";
+        const char *sql =
+            "INSERT INTO temperature (timestamp, temperature) VALUES (?, ?);";
 
         rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
         if (rc != SQLITE_OK)
@@ -90,7 +92,7 @@ void sqlite(void *pvParameter)
 
         sqlite3_close(db);
 
-        vTaskDelay(pdMS_TO_TICKS(60000));
+        vTaskDelay(pdMS_TO_TICKS(TIMER));
     }
 }
 
