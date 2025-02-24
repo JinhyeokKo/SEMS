@@ -1,16 +1,56 @@
-#include "main.h"
+#include "ds18b20.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "ntp.h"
+#include "sdcard.h"
+#include "sems_def.h"
+#include "web.h"
 
-static const char *TAG = "main";
+static const char *TAG  = "main";
+static const char *NAME = "%s/" DB_NAME;
 
 void sqlite(void *pvParameter)
 {
+    char db_path[32];
+    snprintf(db_path, sizeof(db_path), NAME, get_mount_point());
+    ESP_LOGI(TAG, "Database Path: %s", db_path);
+
+    sqlite3 *db;
+    sqlite3_initialize();
+
+    int rc = db_open(db_path, &db);
+    if (rc != SQLITE_OK)
+    {
+        ESP_LOGE(TAG, "Failed to open database: %s", sqlite3_errmsg(db));
+        vTaskDelete(NULL);
+    }
+    ESP_LOGI(TAG, "open");
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    rc = db_exec(db, "PRAGMA journal_mode=WAL;");
+    if (rc != SQLITE_OK)
+    {
+        ESP_LOGE(TAG, "Failed to set WAL mode: %s", sqlite3_errmsg(db));
+    }
+
+    rc = db_exec(db, "CREATE TABLE IF NOT EXISTS temperature ("
+                     "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                     "timestamp DATETIME, "
+                     "temperature FLOAT);");
+    if (rc != SQLITE_OK)
+    {
+        ESP_LOGE(TAG, "Failed to create query: %s", sqlite3_errmsg(db));
+        vTaskDelete(NULL);
+    }
+
+    sqlite3_close(db);
+
     while (1)
     {
         double temp = ds18b20_get_temp();
-        
-        char db_path[32];
-        snprintf(db_path, sizeof(db_path), "%s/temp.db", get_mount_point());
-        ESP_LOGI(TAG, "Database Path: %s", db_path);
+
+        char timestamp[20];
+        get_timestamp(timestamp, sizeof(timestamp));
 
         sqlite3 *db;
         sqlite3_initialize();
@@ -18,59 +58,49 @@ void sqlite(void *pvParameter)
         int rc = db_open(db_path, &db);
         if (rc != SQLITE_OK)
         {
-            ESP_LOGE(TAG, "Failed to open database");
+            ESP_LOGE(TAG, "Failed to open database: %s", sqlite3_errmsg(db));
             vTaskDelete(NULL);
         }
         ESP_LOGI(TAG, "open");
         vTaskDelay(pdMS_TO_TICKS(100));
 
-        rc = db_exec(db, "CREATE TABLE IF NOT EXISTS temperature ("
-                         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                         "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, "
-                         "temperature FLOAT);");
-        if (rc != SQLITE_OK)
-        {
-            ESP_LOGE(TAG, "Failed to create query");
-            vTaskDelete(NULL);
-        }
-
         sqlite3_stmt *stmt;
-        const char *sql = "INSERT INTO temperature (temperature) VALUES (?);";
+        const char *sql = "INSERT INTO temperature (timestamp, temperature) VALUES (?, ?);";
 
         rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
         if (rc != SQLITE_OK)
         {
-            ESP_LOGE(TAG, "Failed to prepare statement");
+            ESP_LOGE(TAG, "Failed to prepare statement: %s",
+                     sqlite3_errmsg(db));
             vTaskDelete(NULL);
         }
 
-        sqlite3_bind_double(stmt, 1, temp);
+        sqlite3_bind_text(stmt, 1, timestamp, -1, SQLITE_STATIC);
+        sqlite3_bind_double(stmt, 2, temp);
 
         rc = sqlite3_step(stmt);
         if (rc != SQLITE_DONE)
         {
-            ESP_LOGE(TAG, "Failed to execute statement");
+            ESP_LOGE(TAG, "Failed to execute statement: %s",
+                     sqlite3_errmsg(db));
             vTaskDelete(NULL);
         }
 
         sqlite3_finalize(stmt);
 
         sqlite3_close(db);
-        
-        vTaskDelay(pdMS_TO_TICKS(300000));
-    }
-}
 
-void app_init(void)
-{
-    ds18b20_init();
-    sdcard_init();
-    initialize_sntp();
+        vTaskDelay(pdMS_TO_TICKS(60000));
+    }
 }
 
 void app_main(void)
 {
-    app_init();
+    ds18b20_init();
+    sdcard_init();
+
+    websocket_init();
+    initialize_sntp();
+
     xTaskCreate(&sqlite, "SQLITE3", 1024 * 6, NULL, 5, NULL);
-    websocket_main();
 }

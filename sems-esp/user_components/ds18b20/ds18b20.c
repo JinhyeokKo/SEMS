@@ -1,15 +1,11 @@
 #include "ds18b20.h"
-#include "driver/gpio.h"
-#include "rom/ets_sys.h"
 
-// DS18B20 명령어
 #define DS18B20_SKIP_ROM           0xCC
 #define DS18B20_CONVERT_T          0x44
 #define DS18B20_READ_SCRATCHPAD    0xBE
 
 static const gpio_num_t DS18B20_GPIO = HW_DS18B20_GPIO;
 
-// 1-Wire 통신 구현 (비트 단위 통신)
 static void write_bit(int bit)
 {
     gpio_set_direction(DS18B20_GPIO, GPIO_MODE_OUTPUT);
@@ -39,7 +35,6 @@ static int read_bit(void)
     return bit;
 }
 
-// 바이트 단위 읽기/쓰기
 static void write_byte(uint8_t data)
 {
     for (int i = 0; i < 8; i++) {
@@ -60,7 +55,6 @@ static uint8_t read_byte(void)
     return data;
 }
 
-// 센서 리셋 및 존재 확인
 static esp_err_t reset(void)
 {
     gpio_set_direction(DS18B20_GPIO, GPIO_MODE_OUTPUT);
@@ -85,20 +79,18 @@ esp_err_t ds18b20_init(void)
 double ds18b20_get_temp(void)
 {
     if (reset() != ESP_OK) {
-        return -999.0f;  // 에러 값 반환
+        return -999.0f;
     }
 
-    // 온도 변환 시작
     write_byte(DS18B20_SKIP_ROM);
     write_byte(DS18B20_CONVERT_T);
     
-    ets_delay_us(750000);  // 변환 대기 (750ms)
+    ets_delay_us(750000);
     
     if (reset() != ESP_OK) {
         return -999.0f;
     }
     
-    // 온도값 읽기
     write_byte(DS18B20_SKIP_ROM);
     write_byte(DS18B20_READ_SCRATCHPAD);
     

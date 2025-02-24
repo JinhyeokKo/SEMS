@@ -1,6 +1,6 @@
 #include "sdcard.h"
 
-static const char *mount_point = "/sdcard";
+static const char *mount_point = MOUNT_POINT;
 static const char *TAG         = "sdcard";
 static sdmmc_card_t *card      = NULL;
 

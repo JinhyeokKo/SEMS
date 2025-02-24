@@ -1,5 +1,5 @@
 idf_component_register(
     SRCS "ds18b20.c"
     INCLUDE_DIRS "inc"
-    REQUIRES driver
+    REQUIRES driver common
 )

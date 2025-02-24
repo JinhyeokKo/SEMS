@@ -13,7 +13,6 @@
 
 #include "ble_prov.h"
 #include "esp_event.h"
-#include "esp_log.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -22,6 +21,7 @@
 #include "mdns.h"
 #include "nvs_flash.h"
 #include "sdcard.h"
+#include "web.h"
 
 #include "websocket_server.h"
 
@@ -69,19 +69,21 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-		ESP_ERROR_CHECK(ble_prov_stop());
+#ifndef CONFIG_WIFI
+        ESP_ERROR_CHECK(ble_prov_stop());
+#endif
     }
 }
 
 void wifi_init_sta(void)
 {
-    // BLE 프로비저닝 초기화
+#ifndef CONFIG_WIFI
     ESP_ERROR_CHECK(ble_prov_init());
     ESP_ERROR_CHECK(ble_prov_start());
 
-    // WiFi 자격증명 획득
     wifi_credentials_t credentials;
     ESP_ERROR_CHECK(ble_prov_get_credentials(&credentials));
+#endif
 
     s_wifi_event_group = xEventGroupCreate();
 
@@ -89,15 +91,33 @@ void wifi_init_sta(void)
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    esp_netif_t *netif = esp_netif_create_default_wifi_sta();
+#ifndef CUSTOM_IP
+    esp_netif_create_default_wifi_sta();
+#endif
 
+#ifdef CUSTOM_IP
+    esp_netif_t *netif = esp_netif_create_default_wifi_sta();
     ESP_ERROR_CHECK(esp_netif_dhcpc_stop(netif));
 
+    static const int ip[]      = IP4_IP_CUSTOM;
+    static const int gateway[] = IP4_GATEWAY_CUSTOM;
+    static const int netmask[] = IP4_NETMASK_CUSTOM;
+    static const int dns[]     = IP4_DNS_CUSTOM;
+
     esp_netif_ip_info_t ip_info = {0};
-    IP4_ADDR(&ip_info.ip, 192, 168, 0, 3);
-    IP4_ADDR(&ip_info.gw, 192, 168, 0, 1);
-    IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
+    IP4_ADDR(&ip_info.ip, ip[0], ip[1], ip[2], ip[3]);
+    IP4_ADDR(&ip_info.gw, gateway[0], gateway[1], gateway[2], gateway[3]);
+    IP4_ADDR(&ip_info.netmask, netmask[0], netmask[1], netmask[2], netmask[3]);
     ESP_ERROR_CHECK(esp_netif_set_ip_info(netif, &ip_info));
+
+    esp_netif_dns_info_t dns_info = {0};
+    esp_ip4_addr_t dns_ip;
+    IP4_ADDR(&dns_ip, dns[0], dns[1], dns[2], dns[3]);
+    dns_info.ip.u_addr.ip4 = dns_ip;
+    dns_info.ip.type       = IPADDR_TYPE_V4;
+    ESP_ERROR_CHECK(
+        esp_netif_set_dns_info(netif, ESP_NETIF_DNS_MAIN, &dns_info));
+#endif
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -125,8 +145,10 @@ void wifi_init_sta(void)
             },
     };
 
-	strcpy((char*)wifi_config.sta.ssid, credentials.ssid);
-    strcpy((char*)wifi_config.sta.password, credentials.password);
+#ifndef CONFIG_WIFI
+    strcpy((char *)wifi_config.sta.ssid, credentials.ssid);
+    strcpy((char *)wifi_config.sta.password, credentials.password);
+#endif
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
@@ -168,7 +190,6 @@ void wifi_init_sta(void)
 
 void initialise_mdns(void)
 {
-    // initialize mDNS
     ESP_ERROR_CHECK(mdns_init());
     // set mDNS hostname (required if you want to advertise services)
     ESP_ERROR_CHECK(mdns_hostname_set(CONFIG_MDNS_HOSTNAME));
@@ -185,25 +206,24 @@ void initialise_mdns(void)
 void client_task(void *pvParameters);
 void server_task(void *pvParameters);
 
-void websocket_main()
+void websocket_init(void)
 {
-    // Initialize NVS
     esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+        ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
         ESP_LOGW(TAG, "NVS no free pages or new version found, erasing...");
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
-    if (ret != ESP_OK) {
+    if (ret != ESP_OK)
+    {
         ESP_LOGE(TAG, "NVS initialization failed: %s", esp_err_to_name(ret));
     }
     ESP_ERROR_CHECK(ret);
 
-    // Initialize WiFi
     wifi_init_sta();
 
-    // Initialize mdns
     initialise_mdns();
 
     xMessageBufferToClient = xMessageBufferCreate(1024);
@@ -215,16 +235,13 @@ void websocket_main()
         esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info));
     char cparam0[64];
     sprintf(cparam0, IPSTR, IP2STR(&ip_info.ip));
-    //sprintf(cparam0, "%s.local", CONFIG_MDNS_HOSTNAME);
+    // sprintf(cparam0, "%s.local", CONFIG_MDNS_HOSTNAME);
 
-    // Start web socket server
     ws_server_start();
 
-    // Start web server
     xTaskCreate(&server_task, "server_task", 1024 * 8, (void *)cparam0, 5,
                 NULL);
 
-    // Start web client
     xTaskCreate(&client_task, "client_task", 1024 * 6,
                 (void *)get_mount_point(), 5, NULL);
 

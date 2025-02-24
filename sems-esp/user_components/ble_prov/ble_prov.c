@@ -1,16 +1,16 @@
+#ifndef CONFIG_WIFI
+
 #include "ble_prov.h"
 #include "esp_bt.h"
 #include "esp_bt_main.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gatt_common_api.h"
 #include "esp_gatts_api.h"
-#include "esp_log.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
-#include "sdkconfig.h"
 #include <string.h>
 
 static const char *TAG = "ble";
@@ -369,3 +369,5 @@ esp_err_t ble_prov_stop(void)
 
     return ESP_OK;
 }
+
+#endif
