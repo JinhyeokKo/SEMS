@@ -48,6 +48,6 @@
 
 // DB SET
 #define DB_NAME "temp.db"
-#define SAVE_TIME_INTERVAL 60000
+#define SAVE_TIME_INTERVAL 10000
 
 #endif
