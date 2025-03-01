@@ -12,6 +12,8 @@ static const uint32_t TIMER = SAVE_TIME_INTERVAL;
 
 void sqlite(void *pvParameter)
 {
+    double temp = 0;
+    char timestamp[20];
     char db_path[32];
     snprintf(db_path, sizeof(db_path), NAME, get_mount_point());
     ESP_LOGI(TAG, "Database Path: %s", db_path);
@@ -48,9 +50,7 @@ void sqlite(void *pvParameter)
 
     while (1)
     {
-        double temp = ds18b20_get_temp();
-
-        char timestamp[20];
+        temp = ds18b20_get_temp();
         get_timestamp(timestamp, sizeof(timestamp));
 
         sqlite3 *db;
@@ -98,9 +98,9 @@ void sqlite(void *pvParameter)
 
 void app_main(void)
 {
-    ds18b20_init();
+    ds18b20_timer_init();
+    ds18b20_start_timer(SAVE_TIME_INTERVAL);
     sdcard_init();
-
     websocket_init();
     initialize_sntp();
 

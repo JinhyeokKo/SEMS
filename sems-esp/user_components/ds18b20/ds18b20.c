@@ -5,6 +5,8 @@
 #define DS18B20_READ_SCRATCHPAD    0xBE
 
 static const gpio_num_t DS18B20_GPIO = HW_DS18B20_GPIO;
+static double latest_temp = -999.0;
+static esp_timer_handle_t ds18b20_timer;
 
 static void write_bit(int bit)
 {
@@ -70,27 +72,21 @@ static esp_err_t reset(void)
     return presence ? ESP_FAIL : ESP_OK;
 }
 
-esp_err_t ds18b20_init(void)
+static void ds18b20_start_conversion(void)
 {
-    gpio_reset_pin(DS18B20_GPIO);
-    return ESP_OK;
+    if (reset() == ESP_OK) {
+        write_byte(DS18B20_SKIP_ROM);
+        write_byte(DS18B20_CONVERT_T);
+    }
 }
 
-double ds18b20_get_temp(void)
+static void ds18b20_read_temp(void *arg)
 {
     if (reset() != ESP_OK) {
-        return -999.0f;
+        latest_temp = -999.0;
+        return;
     }
 
-    write_byte(DS18B20_SKIP_ROM);
-    write_byte(DS18B20_CONVERT_T);
-    
-    ets_delay_us(750000);
-    
-    if (reset() != ESP_OK) {
-        return -999.0f;
-    }
-    
     write_byte(DS18B20_SKIP_ROM);
     write_byte(DS18B20_READ_SCRATCHPAD);
     
@@ -98,5 +94,26 @@ double ds18b20_get_temp(void)
     uint8_t temp_h = read_byte();
     
     int16_t temp = (temp_h << 8) | temp_l;
-    return temp * 0.0625;  // 온도 변환 (섭씨)
+    latest_temp = temp * 0.0625;
+    ESP_LOGI("DS18B20", "Temp: %.2f C", latest_temp);
+}
+
+void ds18b20_timer_init(void)
+{
+    const esp_timer_create_args_t timer_args = {
+        .callback = &ds18b20_read_temp,
+        .name = "ds18b20_timer"
+    };
+    esp_timer_create(&timer_args, &ds18b20_timer);
+}
+
+void ds18b20_start_timer(uint32_t interval_ms)
+{
+    ds18b20_start_conversion();
+    esp_timer_start_periodic(ds18b20_timer, interval_ms * 1000);
+}
+
+double ds18b20_get_temp(void)
+{
+    return latest_temp;
 }

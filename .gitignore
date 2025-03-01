@@ -5,3 +5,5 @@ build/
 .metadata/
 managed_components/
 .clang-format
+debug.log
+sdkconfig.old
