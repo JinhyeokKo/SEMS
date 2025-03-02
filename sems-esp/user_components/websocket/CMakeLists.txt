@@ -4,4 +4,4 @@ idf_component_register(SRCS "web.c" "web_server.c" "web_client.c"
               "html/favicon.ico"
               "html/main.js"
               "html/root.html"
-  REQUIRES sqlite json esp_wifi sdcard ble_prov nvs_flash common)
+  REQUIRES json esp_wifi sdcard ble_prov nvs_flash common snopnop2002__sqlite3 sqlite)
