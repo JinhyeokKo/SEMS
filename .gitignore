@@ -3,7 +3,8 @@
 .devcontainer/
 build/
 .metadata/
-managed_components/
+sems-esp/managed_components/*
+!sems-esp/managed_components/snopnop2002__sqlite3/
 .clang-format
 debug.log
 sdkconfig.old

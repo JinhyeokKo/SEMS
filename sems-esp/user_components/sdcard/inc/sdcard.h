@@ -4,8 +4,6 @@
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
 #include "sems_def.h"
-#include "sqlite3.h"
-#include "sqllib.h"
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/unistd.h>

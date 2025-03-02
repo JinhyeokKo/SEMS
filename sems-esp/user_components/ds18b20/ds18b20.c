@@ -72,16 +72,15 @@ static esp_err_t reset(void)
     return presence ? ESP_FAIL : ESP_OK;
 }
 
-static void ds18b20_start_conversion(void)
+static void ds18b20_read_temp(void *arg)
 {
     if (reset() == ESP_OK) {
         write_byte(DS18B20_SKIP_ROM);
         write_byte(DS18B20_CONVERT_T);
     }
-}
 
-static void ds18b20_read_temp(void *arg)
-{
+    vTaskDelay(pdMS_TO_TICKS(750));
+
     if (reset() != ESP_OK) {
         latest_temp = -999.0;
         return;
@@ -98,18 +97,13 @@ static void ds18b20_read_temp(void *arg)
     ESP_LOGI("DS18B20", "Temp: %.2f C", latest_temp);
 }
 
-void ds18b20_timer_init(void)
+void ds18b20_timer_init(uint32_t interval_ms)
 {
     const esp_timer_create_args_t timer_args = {
         .callback = &ds18b20_read_temp,
         .name = "ds18b20_timer"
     };
     esp_timer_create(&timer_args, &ds18b20_timer);
-}
-
-void ds18b20_start_timer(uint32_t interval_ms)
-{
-    ds18b20_start_conversion();
     esp_timer_start_periodic(ds18b20_timer, interval_ms * 1000);
 }
 

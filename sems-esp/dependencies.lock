@@ -21,16 +21,18 @@ dependencies:
     source:
       type: idf
     version: 5.4.0
-  sd_card:
+  snopnop2002/sqlite3:
+    component_hash: 6f20e0e4fb6f6bf21dc3b54d332b1f750e7014a4feb1cbe940f6aa6289a7ab83
     dependencies: []
     source:
-      path: D:\esp\v5.4\esp-idf\examples\storage\sd_card\sdmmc\components\sd_card
-      type: local
-    version: '*'
+      git: https://github.com/nopnop2002/esp32-idf-sqlite3.git
+      path: components/esp32-idf-sqlite3/
+      type: git
+    version: 4afa6d7d85159b7bc3591fcadc95751a3a53a5d3
 direct_dependencies:
 - Molorius/esp32-websocket
 - espressif/mdns
-- sd_card
-manifest_hash: 50c087978ab329c7f424e3a1d6c99b2a2e87fc672898923a484efa42bfe2549d
+- snopnop2002/sqlite3
+manifest_hash: 2ed7311c005865803240c891a087c105e585c1ac2ff2a0c5085db334170178d8
 target: esp32s3
 version: 2.0.0
