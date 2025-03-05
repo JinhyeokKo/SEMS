@@ -6,7 +6,7 @@
 #define TIMEZONE_SET   TIMEZONE_NTP
 #define NTP_SERVER_SET SERVER_NTP
 
-void initialize_sntp(void);
+void ntp_init(void);
 void get_timestamp(char *buffer, size_t size);
 
 #endif

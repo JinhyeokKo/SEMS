@@ -76,7 +76,7 @@ SEMS-ESP/
   - BLE (프로비저닝)
   - Wi-Fi (웹 인터페이스)
   - WebSocket (실시간 데이터 통신)
-- **파일 시스템**: FATFS (SD 카드)
+- **파일 시스템**: FATFS (SD 카드 SPI방식)
 
 
 ## 설치 및 설정
@@ -97,12 +97,13 @@ SEMS-ESP/
     ```
 
 ## 사용 방법
+> 사용 전 sdkconfig.defaults 설정을 본인의 보드에 맞게 설정해주세요
 1. 블루투스로 'ESP_WIFI_PROV'와 페어링(보드 자동 연결 허용)
 2. 페어링 후 wifi 정보(SSID, PASSWORD) 전송
     > uuid가 존재하는 custom service로 write모드로 전송  
     형식 : ssid,pw
 
-3. 웹 브라우저에서 `http://192.168.0.3` 또는 `http://sems.local` 접속하여 db 조회 및 제어
+3. 웹 브라우저에서 `http://192.168.0.14` 또는 `http://sems.local` 접속하여 db 조회 및 제어
 
 ## 라이선스
 이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 LICENSE 파일을 참조하세요.
@@ -111,5 +112,6 @@ SEMS-ESP/
 이 프로젝트는 다음 외부 라이브러리를 사용하며, 각 라이브러리는 해당 라이선스에 따라 배포됩니다:
 - [esp32-idf-sqlite3](https://github.com/nopnop2002/esp32-idf-sqlite3) : Apache 2.0 라이선스
 - ESP-IDF 라이브러리 : Apache 2.0 라이선스
+- [ESP32 WebSocket](https://github.com/Molorius/esp32-websocket) : GPL-3.0 라이선스스
 
 각 외부 라이브러리의 라이선스 조건을 준수해야 합니다. 자세한 내용은 각 라이브러리의 라이선스 파일을 참조하세요.

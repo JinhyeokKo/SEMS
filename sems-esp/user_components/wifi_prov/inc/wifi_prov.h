@@ -1,5 +1,5 @@
-#ifndef WEB_H
-#define WEB_H
+#ifndef WIFI_PROV_H
+#define WIFI_PROV_H
 
 #include "sems_def.h"
 
@@ -19,5 +19,7 @@
 #define CONFIG_ESP_WIFI_PASSWORD WIFI_PASSWORD
 #endif
 
-void websocket_init(void);
+void wifi_init(void);
+void wifi_get_ip(char *buffer);
+
 #endif

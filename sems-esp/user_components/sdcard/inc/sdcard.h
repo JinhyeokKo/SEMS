@@ -15,7 +15,7 @@
 
 #define MOUNT_POINT MOUNT_POINT_SET
 
-void sdcard_init(void);
+esp_err_t sdcard_init(void);
 const char *get_mount_point(void);
 
 #endif

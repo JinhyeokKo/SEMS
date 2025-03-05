@@ -33,6 +33,6 @@ direct_dependencies:
 - Molorius/esp32-websocket
 - espressif/mdns
 - snopnop2002/sqlite3
-manifest_hash: 2ed7311c005865803240c891a087c105e585c1ac2ff2a0c5085db334170178d8
+manifest_hash: 9b56d6a7e416c749aaa8b38e346ab31ff5091e7c8382ae8b17e161c96c66babb
 target: esp32s3
 version: 2.0.0

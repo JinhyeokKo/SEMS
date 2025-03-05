@@ -27,7 +27,7 @@ void time_sync_notification_cb(struct timeval *tv)
              timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
 }
 
-void initialize_sntp(void)
+void ntp_init(void)
 {
     ESP_LOGI(TAG, "NTP 초기화 중...");
     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG(NTP_SERVER);
@@ -39,18 +39,18 @@ void initialize_sntp(void)
     while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET &&
            retry < max_retries)
     {
-        ESP_LOGI(TAG, "NTP 동기화 대기 중... (%d/%d)", retry, max_retries);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
         retry++;
+        ESP_LOGI(TAG, "NTP 동기화 대기 중... (%d/%d)", retry, max_retries);
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 
     if (sntp_get_sync_status() == SNTP_SYNC_STATUS_COMPLETED)
     {
-        ESP_LOGE(TAG, "NTP 동기화 실패");
+        ESP_LOGE(TAG, "RTC 시간 설정 완료");
     }
     else
     {
-        ESP_LOGI(TAG, "RTC 시간 설정 완료");
+        ESP_LOGI(TAG, "NTP 동기화 실패");
     }
 }
 
