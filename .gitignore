@@ -8,3 +8,4 @@ sems-esp/managed_components/*
 .clang-format
 debug.log
 sdkconfig.old
+/.idea/
